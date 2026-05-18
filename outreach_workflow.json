@@ -73,7 +73,7 @@
       "name": "Log Suppressed",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [1100, 180],
+      "position": [1100, 160],
       "credentials": {
         "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
       },
@@ -87,8 +87,130 @@
             "Timestamp": "={{ $now.toISO() }}",
             "Customer Name": "={{ $json.customerName }}",
             "Company": "={{ $json.company }}",
-            "Trigger Type": "=Suppressed",
-            "Email Sent": "=No",
+            "Trigger Type": "Suppressed",
+            "Email Sent": "No",
+            "Message Preview": ""
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "Category Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 440],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let customerName = $json.customerName || '';\nlet company = $json.company || '';\nlet email = $json.email || '';\nlet planTier = $json.planTier || '';\nlet lastActivityDate = $json.lastActivityDate || '';\nlet renewalDate = $json.renewalDate || '';\nlet milestoneReached = $json.milestoneReached || '';\nlet ticketClosedDate = $json.ticketClosedDate || '';\nlet lastContacted = $json.lastContacted || '';\n\nconst now = Date.now();\n\nlet isTicket = false;\nif (ticketClosedDate) {\n  const ticketMs = new Date(ticketClosedDate).getTime();\n  isTicket = ticketMs > (now - (24 * 60 * 60 * 1000));\n}\n\nlet isInactivity = false;\nlet daysInactive = 0;\nif (lastActivityDate) {\n  const activityMs = new Date(lastActivityDate).getTime();\n  const fourteenDaysAgo = now - (14 * 24 * 60 * 60 * 1000);\n  isInactivity = activityMs < fourteenDaysAgo;\n  daysInactive = Math.floor((now - activityMs) / (24 * 60 * 60 * 1000));\n}\n\nlet isRenewal = false;\nlet daysUntilRenewal = 0;\nif (renewalDate) {\n  const renewalMs = new Date(renewalDate).getTime();\n  const thirtyDaysFromNow = now + (30 * 24 * 60 * 60 * 1000);\n  if (renewalMs > now && renewalMs <= thirtyDaysFromNow) {\n    isRenewal = true;\n    daysUntilRenewal = Math.ceil((renewalMs - now) / (24 * 60 * 60 * 1000));\n  }\n}\n\nlet isMilestone = milestoneReached.trim().toLowerCase() === 'yes';\n\nreturn {\n  json: {\n    customerName,\n    company,\n    email,\n    planTier,\n    lastActivityDate,\n    renewalDate,\n    milestoneReached,\n    ticketClosedDate,\n    lastContacted,\n    isTicket,\n    isInactivity,\n    isRenewal,\n    isMilestone,\n    daysUntilRenewal,\n    daysInactive\n  }\n};"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "Is Ticket?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1320, 440],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-ticket",
+              "leftValue": "{{ $json.isTicket }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0009-4000-8000-000000000009",
+      "name": "Is Inactive?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1540, 440],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-inactivity",
+              "leftValue": "{{ $json.isInactivity }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "name": "Is Renewal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1760, 440],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-renewal",
+              "leftValue": "{{ $json.isRenewal }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "name": "Is Milestone?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1980, 440],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-milestone",
+              "leftValue": "{{ $json.isMilestone }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0012-4000-8000-000000000012",
+      "name": "Log No Action",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2200, 440],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Activity Log",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $json.customerName }}",
+            "Company": "={{ $json.company }}",
+            "Trigger Type": "No Action",
+            "Email Sent": "No",
             "Message Preview": ""
           }
         },
@@ -112,8 +234,41 @@
     "Is Suppressed?": {
       "main": [
         [{ "node": "Log Suppressed", "type": "main", "index": 0 }],
-        []
+        [{ "node": "Category Router", "type": "main", "index": 0 }]
       ]
+    },
+    "Log Suppressed": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Category Router": {
+      "main": [[{ "node": "Is Ticket?", "type": "main", "index": 0 }]]
+    },
+    "Is Ticket?": {
+      "main": [
+        [],
+        [{ "node": "Is Inactive?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Inactive?": {
+      "main": [
+        [],
+        [{ "node": "Is Renewal?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Renewal?": {
+      "main": [
+        [],
+        [{ "node": "Is Milestone?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Milestone?": {
+      "main": [
+        [],
+        [{ "node": "Log No Action", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log No Action": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
     }
   },
   "pinData": {},
