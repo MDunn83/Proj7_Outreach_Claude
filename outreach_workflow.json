@@ -1,0 +1,126 @@
+{
+  "name": "Customer Outreach Automation",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "parameters": {}
+    },
+    {
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Get Customer Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [220, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "getAll",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [440, 300],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Suppression Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let lastContacted = $json['Last Contacted Date'] || '';\nlet customerName = $json['Customer Name'] || '';\nlet company = $json['Company'] || '';\nlet email = $json['Email'] || '';\nlet planTier = $json['Plan Tier'] || '';\nlet lastActivityDate = $json['Last Activity Date'] || '';\nlet renewalDate = $json['Renewal Date'] || '';\nlet milestoneReached = $json['Milestone Reached?'] || '';\nlet ticketClosedDate = $json['Support Ticket Closed Date'] || '';\n\nlet isSuppressed = false;\nif (lastContacted) {\n  const lastContactedMs = new Date(lastContacted).getTime();\n  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);\n  if (lastContactedMs > sevenDaysAgo) {\n    isSuppressed = true;\n  }\n}\n\nreturn {\n  json: {\n    customerName,\n    company,\n    email,\n    planTier,\n    lastActivityDate,\n    renewalDate,\n    milestoneReached,\n    ticketClosedDate,\n    lastContacted,\n    isSuppressed\n  }\n};"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Is Suppressed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-suppressed",
+              "leftValue": "{{ $json.isSuppressed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Log Suppressed",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1100, 180],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Activity Log",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $json.customerName }}",
+            "Company": "={{ $json.company }}",
+            "Trigger Type": "=Suppressed",
+            "Email Sent": "=No",
+            "Message Preview": ""
+          }
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Get Customer Rows", "type": "main", "index": 0 }]]
+    },
+    "Get Customer Rows": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Loop Over Items": {
+      "main": [[{ "node": "Suppression Check", "type": "main", "index": 0 }]]
+    },
+    "Suppression Check": {
+      "main": [[{ "node": "Is Suppressed?", "type": "main", "index": 0 }]]
+    },
+    "Is Suppressed?": {
+      "main": [
+        [{ "node": "Log Suppressed", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "versionId": "00000000-0000-0000-0000-000000000001"
+}
