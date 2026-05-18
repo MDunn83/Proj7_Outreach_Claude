@@ -216,6 +216,386 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "name": "LLM Chain Ticket",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1500, -60],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\n\\nWrite a warm, brief email body to this customer. Their support ticket was recently resolved. Express that you were glad to help and invite them to reach out with any further questions or concerns.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0014-4000-8000-000000000014",
+      "name": "Groq Model Ticket",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [1500, -240],
+      "credentials": {
+        "groqApi": { "name": "Groq account" }
+      },
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0015-4000-8000-000000000015",
+      "name": "Gmail Ticket",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1720, -160],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail OAuth2 API" }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Category Router').item.json.email }}",
+        "subject": "={{ \"We're here if you need us, \" + $('Category Router').item.json.customerName }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0016-4000-8000-000000000016",
+      "name": "Log Ticket",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1720, 60],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Activity Log",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $('Category Router').item.json.customerName }}",
+            "Company": "={{ $('Category Router').item.json.company }}",
+            "Trigger Type": "Ticket",
+            "Email Sent": "Yes",
+            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0017-4000-8000-000000000017",
+      "name": "Update Last Contacted Ticket",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1940, 60],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "update",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Category Router').item.json.email }}",
+            "Last Contacted Date": "={{ $now.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": ["Email"],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0018-4000-8000-000000000018",
+      "name": "LLM Chain Inactivity",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1500, -360],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\nDays Inactive: ' + $json.daysInactive + '\\n\\nWrite a warm, brief email body to this customer who has been inactive for ' + $json.daysInactive + ' days. Politely acknowledge their absence, mention the exact number of days they have been inactive, and encourage them to return.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0019-4000-8000-000000000019",
+      "name": "Groq Model Inactivity",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [1500, -540],
+      "credentials": {
+        "groqApi": { "name": "Groq account" }
+      },
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0020-4000-8000-000000000020",
+      "name": "Gmail Inactivity",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1720, -460],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail OAuth2 API" }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Category Router').item.json.email }}",
+        "subject": "={{ \"We miss you, \" + $('Category Router').item.json.customerName }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0021-4000-8000-000000000021",
+      "name": "Log Inactivity",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1720, -260],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Activity Log",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $('Category Router').item.json.customerName }}",
+            "Company": "={{ $('Category Router').item.json.company }}",
+            "Trigger Type": "Inactivity",
+            "Email Sent": "Yes",
+            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0022-4000-8000-000000000022",
+      "name": "Update Last Contacted Inactivity",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1940, -260],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "update",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Category Router').item.json.email }}",
+            "Last Contacted Date": "={{ $now.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": ["Email"],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0023-4000-8000-000000000023",
+      "name": "LLM Chain Renewal",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1500, -660],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\nDays Until Auto-Renewal: ' + $json.daysUntilRenewal + '\\n\\nWrite a brief email body informing this customer that their subscription will automatically renew in ' + $json.daysUntilRenewal + ' days. Let them know no action is required on their part.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0024-4000-8000-000000000024",
+      "name": "Groq Model Renewal",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [1500, -840],
+      "credentials": {
+        "groqApi": { "name": "Groq account" }
+      },
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0025-4000-8000-000000000025",
+      "name": "Gmail Renewal",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1720, -760],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail OAuth2 API" }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Category Router').item.json.email }}",
+        "subject": "={{ \"Your renewal is coming up, \" + $('Category Router').item.json.customerName }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0026-4000-8000-000000000026",
+      "name": "Log Renewal",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1720, -560],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Activity Log",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $('Category Router').item.json.customerName }}",
+            "Company": "={{ $('Category Router').item.json.company }}",
+            "Trigger Type": "Renewal",
+            "Email Sent": "Yes",
+            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0027-4000-8000-000000000027",
+      "name": "Update Last Contacted Renewal",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1940, -560],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "update",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Category Router').item.json.email }}",
+            "Last Contacted Date": "={{ $now.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": ["Email"],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0028-4000-8000-000000000028",
+      "name": "LLM Chain Milestone",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1500, -960],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\n\\nWrite a brief, enthusiastic congratulatory email body for this customer who has just reached a milestone. Acknowledge their achievement warmly and keep the message positive and brief.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0029-4000-8000-000000000029",
+      "name": "Groq Model Milestone",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [1500, -1140],
+      "credentials": {
+        "groqApi": { "name": "Groq account" }
+      },
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0030-4000-8000-000000000030",
+      "name": "Gmail Milestone",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1720, -1060],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail OAuth2 API" }
+      },
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Category Router').item.json.email }}",
+        "subject": "={{ \"Congratulations on your milestone, \" + $('Category Router').item.json.customerName + \"!\" }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "a1b2c3d4-0031-4000-8000-000000000031",
+      "name": "Log Milestone",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1720, -860],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Activity Log",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "Customer Name": "={{ $('Category Router').item.json.customerName }}",
+            "Company": "={{ $('Category Router').item.json.company }}",
+            "Trigger Type": "Milestone",
+            "Email Sent": "Yes",
+            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0032-4000-8000-000000000032",
+      "name": "Update Last Contacted Milestone",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1940, -860],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
+      },
+      "parameters": {
+        "operation": "update",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Category Router').item.json.email }}",
+            "Last Contacted Date": "={{ $now.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": ["Email"],
+          "schema": []
+        },
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -245,29 +625,97 @@
     },
     "Is Ticket?": {
       "main": [
-        [],
+        [{ "node": "LLM Chain Ticket", "type": "main", "index": 0 }],
         [{ "node": "Is Inactive?", "type": "main", "index": 0 }]
       ]
     },
     "Is Inactive?": {
       "main": [
-        [],
+        [{ "node": "LLM Chain Inactivity", "type": "main", "index": 0 }],
         [{ "node": "Is Renewal?", "type": "main", "index": 0 }]
       ]
     },
     "Is Renewal?": {
       "main": [
-        [],
+        [{ "node": "LLM Chain Renewal", "type": "main", "index": 0 }],
         [{ "node": "Is Milestone?", "type": "main", "index": 0 }]
       ]
     },
     "Is Milestone?": {
       "main": [
-        [],
+        [{ "node": "LLM Chain Milestone", "type": "main", "index": 0 }],
         [{ "node": "Log No Action", "type": "main", "index": 0 }]
       ]
     },
     "Log No Action": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Groq Model Ticket": {
+      "ai_languageModel": [[{ "node": "LLM Chain Ticket", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "LLM Chain Ticket": {
+      "main": [
+        [
+          { "node": "Gmail Ticket", "type": "main", "index": 0 },
+          { "node": "Log Ticket", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Ticket": {
+      "main": [[{ "node": "Update Last Contacted Ticket", "type": "main", "index": 0 }]]
+    },
+    "Update Last Contacted Ticket": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Groq Model Inactivity": {
+      "ai_languageModel": [[{ "node": "LLM Chain Inactivity", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "LLM Chain Inactivity": {
+      "main": [
+        [
+          { "node": "Gmail Inactivity", "type": "main", "index": 0 },
+          { "node": "Log Inactivity", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Inactivity": {
+      "main": [[{ "node": "Update Last Contacted Inactivity", "type": "main", "index": 0 }]]
+    },
+    "Update Last Contacted Inactivity": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Groq Model Renewal": {
+      "ai_languageModel": [[{ "node": "LLM Chain Renewal", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "LLM Chain Renewal": {
+      "main": [
+        [
+          { "node": "Gmail Renewal", "type": "main", "index": 0 },
+          { "node": "Log Renewal", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Renewal": {
+      "main": [[{ "node": "Update Last Contacted Renewal", "type": "main", "index": 0 }]]
+    },
+    "Update Last Contacted Renewal": {
+      "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
+    },
+    "Groq Model Milestone": {
+      "ai_languageModel": [[{ "node": "LLM Chain Milestone", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "LLM Chain Milestone": {
+      "main": [
+        [
+          { "node": "Gmail Milestone", "type": "main", "index": 0 },
+          { "node": "Log Milestone", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Milestone": {
+      "main": [[{ "node": "Update Last Contacted Milestone", "type": "main", "index": 0 }]]
+    },
+    "Update Last Contacted Milestone": {
       "main": [[{ "node": "Loop Over Items", "type": "main", "index": 0 }]]
     }
   },
