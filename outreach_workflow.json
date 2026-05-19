@@ -19,7 +19,6 @@
         "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
       },
       "parameters": {
-        "resource": "sheetWithinDocument",
         "operation": "getRows",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": "Customers",
