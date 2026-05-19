@@ -19,9 +19,10 @@
         "googleSheetsOAuth2Api": { "name": "Google Sheets OAuth2 API" }
       },
       "parameters": {
+        "resource": "sheetWithinDocument",
         "operation": "getRows",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
-        "sheetName": "Sheet1",
+        "sheetName": "Customers",
         "options": {}
       }
     },
@@ -288,7 +289,7 @@
       "parameters": {
         "operation": "update",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
-        "sheetName": "Sheet1",
+        "sheetName": "Customers",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -383,7 +384,7 @@
       "parameters": {
         "operation": "update",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
-        "sheetName": "Sheet1",
+        "sheetName": "Customers",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -478,7 +479,7 @@
       "parameters": {
         "operation": "update",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
-        "sheetName": "Sheet1",
+        "sheetName": "Customers",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -573,7 +574,7 @@
       "parameters": {
         "operation": "update",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
-        "sheetName": "Sheet1",
+        "sheetName": "Customers",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
