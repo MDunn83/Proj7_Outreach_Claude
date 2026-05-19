@@ -10,7 +10,9 @@ These rules encode hard-won lessons from production builds. Violating them produ
 
 ## Trigger and Batch Processing
 
-- Use a Manual Trigger + Google Sheets getAll node to read all rows at once when the workflow needs to process a list of items in a single run
+- Use a Manual Trigger + Google Sheets `getRows` node to read all rows at once when the workflow needs to process a list of items in a single run
+- The operation name in the n8n UI is **Get Row(s)**, which maps to `"operation": "getRows"` in JSON. There is no `getAll` operation -- it does not exist and will cause the node to fail.
+- Never add a `resource` field to a Google Sheets read node. Adding `"resource": "sheetWithinDocument"` (or any value) causes the node to render only the Resource selector in the UI -- all other parameters disappear and the node becomes unconfigurable.
 - Never design for one-row-at-a-time trigger processing unless the use case genuinely requires it
 - When deduplication is needed, read the log sheet separately and check in a Code node -- do not use the trigger to filter
 - Google Sheets Trigger must use typeVersion 1 -- higher versions cause "Install this node" errors on import
@@ -122,6 +124,29 @@ These rules encode hard-won lessons from production builds. Violating them produ
 
 - When rendering an array in a Gmail body expression, always include an Array.isArray guard.
   Without it, undefined or malformed arrays render as `[object Object]` with no error signal.
+
+---
+
+## LLM Output Sanitization for Email
+
+Even with explicit formatting rules in the prompt, models frequently insert hard line breaks mid-sentence. Prompt instructions alone are not sufficient. Always add a dedicated Sanitize Text Code node immediately after every LLM Chain node that feeds an email output.
+
+The sanitize node collapses single newlines into spaces while preserving intentional paragraph breaks:
+
+```javascript
+let text = $json.text || '';
+text = text.replace(/\\n/g, ' ');        // literal backslash-n (two chars)
+text = text.replace(/\n(?!\n)/g, ' ');  // single newlines mid-prose
+text = text.replace(/ {2,}/g, ' ');     // collapse extra spaces
+text = text.trim();
+return { json: { text } };
+```
+
+In a JSON workflow file the first replace must be written as `\\\\n` to survive double-escaping.
+
+- The sequence is always: **LLM Chain → Sanitize Text → Gmail → Log → Update**
+- Never wire Gmail directly from an LLM Chain node
+- Log nodes must pull the email body from the Sanitize Text node via cross-node ref, not from the LLM Chain node
 
 ---
 
@@ -250,17 +275,32 @@ return { json: { score, rationale } };
 
 ## Gmail and Logging Pattern
 
-- Gmail node does not pass data through -- it terminates the branch
-- Never wire a logging node downstream of Gmail -- it will receive no data
-- Correct pattern for workflows that send email AND log:
-  - IF score routing True branch connects to BOTH the Email Writer LLM AND the Log node (two wires from same IF output)
-  - IF score routing False branch connects to the Log node
-  - The email branch is a side branch that terminates at Gmail
-- Never hardcode email addresses in Gmail sendTo fields. Always use dynamic expressions
-  pulling from trigger data:
+Gmail does not pass the email content through to downstream nodes, but it does allow downstream nodes to execute. Use cross-node references in Log nodes to retrieve email body from the Sanitize Text node.
+
+**Preferred pattern -- sequential (confirms delivery before logging):**
+```
+LLM Chain → Sanitize Text → Gmail → Log → Update Last Contacted
+```
+- Gmail fires first, confirming delivery
+- Log node wired from Gmail's output; uses cross-node ref for email body:
   ```
-  {{ $('Google Sheets Trigger').item.json['Contact Email'] }}
-  {{ $('Google Sheets Trigger').item.json['Manager Email'] }}
+  {{ $('Sanitize Text Ticket').item.json.text.substring(0, 100) }}
+  ```
+- Update Last Contacted wired from Log's output
+
+**Alternate pattern -- parallel branch (use when delivery confirmation is not required):**
+```
+LLM Chain → Gmail          (email branch, terminates)
+          → Log → Update   (logging branch, runs in parallel)
+```
+- Both branches wire from the LLM Chain (or Sanitize Text) node output
+- Log uses $json.text directly since it receives output before Gmail
+- Do not wire Log from Gmail's output in this pattern
+
+**Rules that apply to both patterns:**
+- Never hardcode email addresses in Gmail sendTo fields. Always use dynamic expressions:
+  ```
+  {{ $('Category Router').item.json.email }}
   ```
   A hardcoded address in sendTo is always a production bug. Add sendTo field verification
   to the pre-export checklist for every workflow.
@@ -269,7 +309,7 @@ return { json: { score, rationale } };
 
 ## Deduplication Pattern
 
-- Read the log sheet with a getAll node triggered from the same manual trigger (fan-out)
+- Read the log sheet with a `getRows` node triggered from the same manual trigger (fan-out)
 - Use a Code node in runOnceForEachItem mode to check each company against the log
 - Pass the log rows as a field on each item (summaryRows array) for downstream checking
 - Dedup check example:
@@ -317,16 +357,17 @@ After importing any Claude Code-generated workflow into n8n, verify in this orde
 
 1. Every IF node condition -- confirm the left side is in expression mode and the operator is correct
 2. All LLM prompt fields are wrapped in {{ }} and expressions are evaluating
-3. Gmail is not wired to any logging node
-4. Trigger node typeVersion matches the n8n Cloud instance
-5. All placeholder Sheet IDs, Task List IDs, and email addresses are filled in
-6. Credential names match exactly what is in n8n's credential manager
-7. Merge node is set to combineByPosition (not Matching Fields) and includeUnpaired is enabled
-8. Every node has an outgoing connection in the connections object -- Limit, Check_In, and Merge
+3. Every LLM Chain node is followed by a Sanitize Text Code node before any Gmail node
+4. Log nodes that run after Gmail use cross-node refs (e.g. `$('Sanitize Text Ticket').item.json.text`) -- not `$json.text`
+5. Trigger node typeVersion matches the n8n Cloud instance
+6. All placeholder Sheet IDs, Task List IDs, and email addresses are filled in
+7. Credential names match exactly what is in n8n's credential manager
+8. Merge node is set to combineByPosition (not Matching Fields) and includeUnpaired is enabled
+9. Every node has an outgoing connection in the connections object -- Limit, Check_In, and Merge
    gate inputs are the most commonly missing
-9. Google Tasks due date fields use full ISO 8601 format (`2026-07-01T00:00:00.000Z`), not bare date strings
-10. Status sheet column mappings pull from the Build Status Row node, not from the original trigger
-11. sendTo fields in all Gmail nodes are dynamic expressions, never hardcoded addresses
+10. Google Tasks due date fields use full ISO 8601 format (`2026-07-01T00:00:00.000Z`), not bare date strings
+11. Status sheet column mappings pull from the Build Status Row node, not from the original trigger
+12. sendTo fields in all Gmail nodes are dynamic expressions, never hardcoded addresses
 
 ---
 
