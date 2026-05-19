@@ -21,7 +21,7 @@
       "parameters": {
         "operation": "getRows",
         "documentId": "YOUR_GOOGLE_SHEET_ID",
-        "sheetName": "Customers",
+        "sheetName": "Sheet1",
         "options": {}
       }
     },
