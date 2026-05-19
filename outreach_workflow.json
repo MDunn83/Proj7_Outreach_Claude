@@ -270,7 +270,7 @@
             "Company": "={{ $('Category Router').item.json.company }}",
             "Trigger Type": "Ticket",
             "Email Sent": "Yes",
-            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+            "Message Preview": "={{ $('LLM Chain Ticket').item.json.text.substring(0, 100) }}"
           }
         },
         "options": {}
@@ -365,7 +365,7 @@
             "Company": "={{ $('Category Router').item.json.company }}",
             "Trigger Type": "Inactivity",
             "Email Sent": "Yes",
-            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+            "Message Preview": "={{ $('LLM Chain Inactivity').item.json.text.substring(0, 100) }}"
           }
         },
         "options": {}
@@ -460,7 +460,7 @@
             "Company": "={{ $('Category Router').item.json.company }}",
             "Trigger Type": "Renewal",
             "Email Sent": "Yes",
-            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+            "Message Preview": "={{ $('LLM Chain Renewal').item.json.text.substring(0, 100) }}"
           }
         },
         "options": {}
@@ -555,7 +555,7 @@
             "Company": "={{ $('Category Router').item.json.company }}",
             "Trigger Type": "Milestone",
             "Email Sent": "Yes",
-            "Message Preview": "={{ $json.text.substring(0, 100) }}"
+            "Message Preview": "={{ $('LLM Chain Milestone').item.json.text.substring(0, 100) }}"
           }
         },
         "options": {}
@@ -634,10 +634,10 @@
       "ai_languageModel": [[{ "node": "LLM Chain Ticket", "type": "ai_languageModel", "index": 0 }]]
     },
     "LLM Chain Ticket": {
-      "main": [[
-        { "node": "Gmail Ticket", "type": "main", "index": 0 },
-        { "node": "Log Ticket", "type": "main", "index": 0 }
-      ]]
+      "main": [[{ "node": "Gmail Ticket", "type": "main", "index": 0 }]]
+    },
+    "Gmail Ticket": {
+      "main": [[{ "node": "Log Ticket", "type": "main", "index": 0 }]]
     },
     "Log Ticket": {
       "main": [[{ "node": "Update Last Contacted Ticket", "type": "main", "index": 0 }]]
@@ -646,10 +646,10 @@
       "ai_languageModel": [[{ "node": "LLM Chain Inactivity", "type": "ai_languageModel", "index": 0 }]]
     },
     "LLM Chain Inactivity": {
-      "main": [[
-        { "node": "Gmail Inactivity", "type": "main", "index": 0 },
-        { "node": "Log Inactivity", "type": "main", "index": 0 }
-      ]]
+      "main": [[{ "node": "Gmail Inactivity", "type": "main", "index": 0 }]]
+    },
+    "Gmail Inactivity": {
+      "main": [[{ "node": "Log Inactivity", "type": "main", "index": 0 }]]
     },
     "Log Inactivity": {
       "main": [[{ "node": "Update Last Contacted Inactivity", "type": "main", "index": 0 }]]
@@ -658,10 +658,10 @@
       "ai_languageModel": [[{ "node": "LLM Chain Renewal", "type": "ai_languageModel", "index": 0 }]]
     },
     "LLM Chain Renewal": {
-      "main": [[
-        { "node": "Gmail Renewal", "type": "main", "index": 0 },
-        { "node": "Log Renewal", "type": "main", "index": 0 }
-      ]]
+      "main": [[{ "node": "Gmail Renewal", "type": "main", "index": 0 }]]
+    },
+    "Gmail Renewal": {
+      "main": [[{ "node": "Log Renewal", "type": "main", "index": 0 }]]
     },
     "Log Renewal": {
       "main": [[{ "node": "Update Last Contacted Renewal", "type": "main", "index": 0 }]]
@@ -670,10 +670,10 @@
       "ai_languageModel": [[{ "node": "LLM Chain Milestone", "type": "ai_languageModel", "index": 0 }]]
     },
     "LLM Chain Milestone": {
-      "main": [[
-        { "node": "Gmail Milestone", "type": "main", "index": 0 },
-        { "node": "Log Milestone", "type": "main", "index": 0 }
-      ]]
+      "main": [[{ "node": "Gmail Milestone", "type": "main", "index": 0 }]]
+    },
+    "Gmail Milestone": {
+      "main": [[{ "node": "Log Milestone", "type": "main", "index": 0 }]]
     },
     "Log Milestone": {
       "main": [[{ "node": "Update Last Contacted Milestone", "type": "main", "index": 0 }]]
