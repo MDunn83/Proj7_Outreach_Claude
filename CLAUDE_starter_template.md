@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## MANDATORY: Read n8n_SKILL.md before doing anything else.
-## MANDATORY: Read n8n_and_ClaudeCode_Lessons_Learned.md before doing anything else.
+## MANDATORY: Read [PROJECT]_ClaudeCode_Lessons_Learned.md before doing anything else.
 ## Do not build anything until you confirm you have read both files.
 ## GitHub MCP only. Do not run any local git commands. Do not touch the local machine.
 
@@ -33,12 +33,23 @@ This repo produces a single n8n workflow JSON file (`FILENAME.json`) importable 
 - Credentials are referenced by name (not ID) -- use the exact credential names listed below.
 - The `"Wait"` node type is `n8n-nodes-base.wait`; set `resume: "timeInterval"` with `amount` and `unit` as needed.
 - Retry settings live inside each node's `"onError"` field: `{ "maxTries": 3, "waitBetweenTries": 2000 }`.
-- Google Sheets "append" uses operation `"append"` on `n8n-nodes-base.googleSheets`.
+- Google Sheets read uses `"operation": "getRows"` -- never `"getAll"` (does not exist). Never add a `resource` field to a Sheets read node; doing so hides all other parameters in the UI.
+- Google Sheets append uses `"operation": "append"` on `n8n-nodes-base.googleSheets`.
 - Google Tasks create uses `n8n-nodes-base.googleTasks` with `resource: "task"`, `operation: "create"`.
 - Groq LLM calls use `@n8n/n8n-nodes-langchain.lmChatGroq` -- prefer this over the OpenAI node pointed at Groq.
 - Google Tasks due dates must use full ISO 8601 format: `"2026-07-01T00:00:00.000Z"` -- bare date strings return a 400 error.
 - Merge node (typeVersion 3) defaults to 2 inputs -- always set `"numberInputs"` explicitly.
 - Merge combineByPosition parameter: `"combineBy": "combineByPosition"` (not `"combinationMode"`).
+- **Sanitize Text Code node:** For any workflow that sends LLM output to Gmail or another output node, always insert a Code node between the LLM Chain and the output node. Prompt-level formatting rules alone do not prevent mid-sentence line breaks. Pattern:
+  ```javascript
+  let text = $json.text || '';
+  text = text.replace(/\\n/g, ' ');        // literal backslash-n (two chars)
+  text = text.replace(/\n(?!\n)/g, ' ');  // single newlines mid-prose
+  text = text.replace(/ {2,}/g, ' ');     // collapse extra spaces
+  text = text.trim();
+  return { json: { text } };
+  ```
+  Sequence: **LLM Chain → Sanitize Text → Gmail → Log → Update**.
 
 ---
 
@@ -83,7 +94,7 @@ Do not include any introductory text, preamble, or closing remarks.
 
 ## Google Sheets Structure
 
-[FILL IN -- list sheet names, column schemas, and which sheet is the trigger vs. the log]
+[FILL IN -- list sheet names and column schemas. Verify all tab names against the actual spreadsheet before exporting -- `sheetName` is case-sensitive and must match exactly.]
 
 ---
 

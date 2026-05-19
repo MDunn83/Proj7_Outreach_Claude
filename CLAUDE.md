@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Read `n8n_SKILL(1).md` completely before writing any node JSON. It encodes hard-won runtime lessons — violating its rules produces workflows that import but fail silently.
 
-> Note: `n8n_and_ClaudeCode_Lessons_Learned.md` is referenced in the starter template but does not yet exist in this repo. Skip that step until the file is added.
+Read `Proj7_ClaudeCode_Lessons_Learned.md` before building. It captures project-specific issues and fixes discovered during the initial build of this workflow.
 
 ---
 
@@ -83,26 +83,23 @@ Do not include any introductory text, preamble, or closing remarks.
 ## Workflow Architecture
 
 ### Trigger
-- **Testing:** Manual Trigger + Google Sheets getAll node (reads all rows at once)
+- **Testing:** Manual Trigger + Google Sheets `getRows` node (reads all rows at once; n8n iterates each row automatically via `runOnceForEachItem` Code nodes)
 - **Production:** Swap Manual Trigger for a daily Schedule Trigger — no other nodes change
 
 ### Node Sequence
 
-1. **Manual Trigger** → fans out to:
-   - **Get Customer Rows** (Google Sheets getAll on customer sheet)
-2. **Loop Over Items** — iterates one customer row at a time
-3. **Suppression Check** (Code node, `runOnceForEachItem`) — IF Last Contacted Date is within the last 7 days:
-   - **YES →** Append `Suppressed` row to Activity Log (Email Sent = `No`, Message Preview = blank). Skip to next item.
+1. **Manual Trigger** → **Get Customer Rows** (Google Sheets `getRows` on customer sheet)
+2. **Suppression Check** (Code node, `runOnceForEachItem`) — checks if Last Contacted Date is within the last 7 days:
+   - **YES →** Append `Suppressed` row to Activity Log (Email Sent = `No`, Message Preview = blank). Stop processing this row.
    - **NO →** Continue to category checks
-4. **Category Check — Ticket** (Code node) — Support Ticket Closed Date within last 24 hours?
-5. **Category Check — Inactivity** — Last Activity Date 14+ days ago?
-6. **Category Check — Renewal** — Renewal Date within next 30 days? (all entries treated as auto-renewal)
-7. **Category Check — Milestone** — Milestone Reached? = `Yes`?
-8. **No Action branch** — none of the above matched → Append `No Action` row to Activity Log (Email Sent = `No`, Message Preview = blank). Skip email.
-9. **Groq LLM node** (one per active category branch) — generates email body using customer fields
-10. **Gmail node** — sends email; Gmail does not pass data through, so logging must be wired from the node *before* Gmail
-11. **Append to Activity Log** — Timestamp, Customer Name, Company, Trigger Type, Email Sent = `Yes`, first 100 chars of LLM body
-12. **Update Customer Sheet** — write today's date to Last Contacted Date column for this row
+3. **Category Router** (Code node) — evaluates all four category flags in priority order, computes `daysInactive` and `daysUntilRenewal`
+4. **Is Ticket?** → **Is Inactive?** → **Is Renewal?** → **Is Milestone?** (chained IF nodes, false output of each feeds the next)
+5. **No Action branch** — none of the above matched → Append `No Action` row to Activity Log (Email Sent = `No`, Message Preview = blank)
+6. **Groq LLM Chain** (one per active category branch) — generates email body using customer fields
+7. **Sanitize Text** (Code node, one per branch) — collapses mid-sentence line breaks into spaces; preserves paragraph breaks
+8. **Gmail node** — sends email using sanitized text
+9. **Append to Activity Log** — Timestamp, Customer Name, Company, Trigger Type, Email Sent = `Yes`, first 100 chars of sanitized body (cross-node ref to Sanitize Text node)
+10. **Update Customer Sheet** — write today's date to Last Contacted Date column for this row
 
 ### Category Hierarchy
 One email per customer per run. Checks run in this order; first match wins:
@@ -133,8 +130,10 @@ One email per customer per run. Checks run in this order; first match wins:
 
 ## Key Architectural Decisions
 
-- **Gmail + Logging pattern:** Gmail node terminates its branch — wire the Activity Log append from the node *before* Gmail, not after. See `n8n_SKILL(1).md` Gmail and Logging Pattern section.
+- **Sanitize Text node:** Always insert a Code node between the LLM Chain and Gmail. Prompt-level formatting rules alone do not reliably prevent mid-sentence line breaks. The sanitize node collapses single newlines into spaces while preserving paragraph breaks. Sequence: **LLM Chain → Sanitize Text → Gmail → Log → Update**.
+- **Gmail sequencing:** Gmail fires first (to confirm delivery), then Log, then Update Last Contacted. Log uses cross-node refs to pull the email body from the Sanitize Text node — not from Gmail's output, which carries no useful data.
 - **LLM context preservation:** After any `chainLlm` node, `$json` is dead. Use `$('NodeName').item.json` cross-node references in all downstream Code nodes.
+- **No Loop Over Items:** n8n iterates rows natively via `runOnceForEachItem`. Loop Over Items adds confusion and is not needed.
 - **Suppressed/No Action rows:** Email Sent = `No`, Message Preview = blank string (not null).
 - **Last Contacted Date update:** Runs after logging — only executes for rows where an email was actually sent (Ticket / Inactivity / Renewal / Milestone branches).
 - **Date comparisons:** Perform all date arithmetic in Code nodes using `Date.now()` and `new Date(value).getTime()`. Do not rely on n8n expression date helpers for threshold logic.
