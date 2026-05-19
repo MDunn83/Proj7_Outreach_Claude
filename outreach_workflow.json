@@ -214,7 +214,7 @@
       "position": [1280, 160],
       "parameters": {
         "promptType": "define",
-        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\n\\nWrite a warm, brief email body to this customer. Their support ticket was recently resolved. Express that you were glad to help and invite them to reach out with any further questions or concerns.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\n\\nWrite a warm, brief email body to this customer. Their support ticket was recently resolved. Express that you were glad to help and invite them to reach out with any further questions or concerns.\\n\\nRules:\\n- Write in flowing prose. Do not insert line breaks within or between sentences.\\n- Use a blank line only to separate distinct paragraphs.\\n- Do not include a greeting, salutation, closing, or signature.\\n- Output ONLY the requested content. Begin directly with the first line of output. Do not include any introductory text, preamble, or closing remarks.' }}"
       }
     },
     {
@@ -309,7 +309,7 @@
       "position": [1500, -160],
       "parameters": {
         "promptType": "define",
-        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\nDays Inactive: ' + $json.daysInactive + '\\n\\nWrite a warm, brief email body to this customer who has been inactive for ' + $json.daysInactive + ' days. Politely acknowledge their absence, mention the exact number of days they have been inactive, and encourage them to return.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\nDays Inactive: ' + $json.daysInactive + '\\n\\nWrite a warm, brief email body to this customer who has been inactive for ' + $json.daysInactive + ' days. Politely acknowledge their absence, mention the exact number of days they have been inactive, and encourage them to return.\\n\\nRules:\\n- Write in flowing prose. Do not insert line breaks within or between sentences.\\n- Use a blank line only to separate distinct paragraphs.\\n- Do not include a greeting, salutation, closing, or signature.\\n- Output ONLY the requested content. Begin directly with the first line of output. Do not include any introductory text, preamble, or closing remarks.' }}"
       }
     },
     {
@@ -404,7 +404,7 @@
       "position": [1720, -460],
       "parameters": {
         "promptType": "define",
-        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\nDays Until Auto-Renewal: ' + $json.daysUntilRenewal + '\\n\\nWrite a brief email body informing this customer that their subscription will automatically renew in ' + $json.daysUntilRenewal + ' days. Let them know no action is required on their part.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\nDays Until Auto-Renewal: ' + $json.daysUntilRenewal + '\\n\\nWrite a brief email body informing this customer that their subscription will automatically renew in ' + $json.daysUntilRenewal + ' days. Let them know no action is required on their part.\\n\\nRules:\\n- Write in flowing prose. Do not insert line breaks within or between sentences.\\n- Use a blank line only to separate distinct paragraphs.\\n- Do not include a greeting, salutation, closing, or signature.\\n- Output ONLY the requested content. Begin directly with the first line of output. Do not include any introductory text, preamble, or closing remarks.' }}"
       }
     },
     {
@@ -499,7 +499,7 @@
       "position": [1940, -760],
       "parameters": {
         "promptType": "define",
-        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\n\\nWrite a brief, enthusiastic congratulatory email body for this customer who has just reached a milestone. Acknowledge their achievement warmly and keep the message positive and brief.\\n\\nOutput ONLY the requested content. Begin directly with the first line of output.\\nDo not include any introductory text, preamble, or closing remarks.' }}"
+        "text": "={{ 'Customer Name: ' + $json.customerName + '\\nCompany: ' + $json.company + '\\nPlan Tier: ' + $json.planTier + '\\n\\nWrite a brief, enthusiastic congratulatory email body for this customer who has just reached a milestone. Acknowledge their achievement warmly and keep the message positive and brief.\\n\\nRules:\\n- Write in flowing prose. Do not insert line breaks within or between sentences.\\n- Use a blank line only to separate distinct paragraphs.\\n- Do not include a greeting, salutation, closing, or signature.\\n- Output ONLY the requested content. Begin directly with the first line of output. Do not include any introductory text, preamble, or closing remarks.' }}"
       }
     },
     {
